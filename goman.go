@@ -103,7 +103,7 @@ func (m *ManPage) parseDesc() {
 }
 
 func (m *ManPage) parseOpts() {
-	idx, err := m.findSection(`(OPTIONS|SWITCHES)`)
+	idx, err := m.findSection(`(OPTIONS|SWITCHESi|DESCRIPTION)`)
 	if err != nil {
 		return
 	}
