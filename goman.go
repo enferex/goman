@@ -35,19 +35,20 @@ type Macro struct {
 type MacroType int
 
 const (
-	B MacroType = iota
+	_ MacroType = iota
+	B
 	IP
 	PP
 	SH
 	TP
 )
 
-var MacroTypes = map[string]MacroType {
-    "B":  B,
-    "IP": IP,
-    "PP": PP,
-    "SH": SH,
-    "TP": TP,
+var MacroTypes = map[string]MacroType{
+	"B":  B,
+	"IP": IP,
+	"PP": PP,
+	"SH": SH,
+	"TP": TP,
 }
 
 func (pe *ParseError) Error() string {
@@ -58,7 +59,7 @@ func (man *ManPage) nextMacroOffset(offset int) *Macro {
 	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ `)
 	if idx := re.FindStringIndex(man.data[offset:]); idx != nil {
 		index := []int{offset + idx[0], offset + idx[1]}
-        str := man.data[index[0]+1 : index[1]-1]
+		str := man.data[index[0]+1 : index[1]-1]
 		mt := MacroType(MacroTypes[str])
 		return &Macro{loc: index, mtype: mt}
 	}
@@ -78,32 +79,80 @@ func (man *ManPage) findSection(name string) (int, *ParseError) {
 }
 
 func stripMacros(str string) {
-    re := regexp.MustCompilePOSIX(`^\.[A-Z]+ *`)
-    str = re.ReplaceAllString(str, "")
+	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ *`)
+	str = re.ReplaceAllString(str, "")
 }
 
 func (m *ManPage) parseDesc() {
 	m.desc = "N/A"
 	if idx, err := m.findSection("DESCRIPTION"); err == nil {
 		start := idx
-        var mc *Macro
+		var mc *Macro
 		for mc = m.nextMacroOffset(start); mc != nil; mc = m.nextMacro(mc) {
 			if mc.mtype == SH {
 				break
 			}
 		}
-        if mc == nil {
-            m.desc = m.data[start:]
-        } else {
-            m.desc = m.data[start:mc.loc[0]]
-        }
-        stripMacros(m.desc)
+		if mc == nil {
+			m.desc = m.data[start:]
+		} else {
+			m.desc = m.data[start:mc.loc[0]]
+		}
+		stripMacros(m.desc)
 	}
 }
 
-func (man ManPage) String() string {
-	return fmt.Sprintf("Name: %s\n" +
-		"Desc: %s\n", man.name, man.desc)
+func (m *ManPage) parseOpts() {
+	idx, err := m.findSection(`(OPTIONS|SWITCHES)`)
+	if err != nil {
+		return
+	}
+
+	// We have a OPTIONS or SWITCHES section
+	for mc := m.nextMacroOffset(idx); mc != nil; mc = m.nextMacro(mc) {
+		if mc.mtype == SH {
+			break
+		}
+
+		if !(mc.mtype == B || mc.mtype == IP) {
+			break
+		}
+
+		// B or IP
+		opt := ""
+		lines := strings.Split(m.data[mc.loc[1]:], "\n")
+		for _, line := range lines {
+			if line[0] == '.' {
+				break
+			}
+			opt += " " + line
+		}
+
+		// Grab '-<optname>\n'
+		opt = strings.TrimLeft(opt, " ")
+		if idx := strings.Index(opt, "-"); idx != -1 {
+			if spc := strings.IndexAny(opt[idx:], "\r "); spc != -1 {
+                spc += 1
+				opt_name := opt[idx:spc]
+				opt_desc := strings.Trim(opt[spc:], " ")
+				m.opts = append(m.opts, Opt{name: opt_name, desc: opt_desc})
+			}
+		}
+	}
+}
+
+func (o Opt) String() string {
+	return o.name + ": " + o.desc
+}
+
+func (m ManPage) String() string {
+	str := fmt.Sprintf("Name: %s\n"+
+		"Desc: %s\n", m.name, m.desc)
+	for _, o := range m.opts {
+		str += fmt.Sprintf("%v\n", o)
+	}
+
+	return str
 }
 
 func (man *ManPage) parse(data string) {
@@ -113,7 +162,7 @@ func (man *ManPage) parse(data string) {
 
 	// Parse all of the interesting parts
 	man.parseDesc()
-	//man.parseOpts()
+	man.parseOpts()
 }
 
 func NewManPage(name string) ManPage {
