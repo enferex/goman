@@ -17,10 +17,11 @@ type Opt struct {
 }
 
 type ManPage struct {
-	name string
-	desc string
-	data string
-	opts []Opt
+	name     string
+	desc     string
+	synopsis string
+	data     string
+	opts     []Opt
 }
 
 type ParseError struct {
@@ -83,9 +84,9 @@ func stripMacros(str string) {
 	str = re.ReplaceAllString(str, "")
 }
 
-func (m *ManPage) parseDesc() {
-	m.desc = "N/A"
-	if idx, err := m.findSection("DESCRIPTION"); err == nil {
+func (m *ManPage) getSection(sectname string) string {
+	data := "N/A"
+	if idx, err := m.findSection(sectname); err == nil {
 		start := idx
 		var mc *Macro
 		for mc = m.nextMacroOffset(start); mc != nil; mc = m.nextMacro(mc) {
@@ -94,18 +95,29 @@ func (m *ManPage) parseDesc() {
 			}
 		}
 		if mc == nil {
-			m.desc = m.data[start:]
+			data = m.data[start:]
 		} else {
-			m.desc = m.data[start:mc.loc[0]]
+			data = m.data[start:mc.loc[0]]
 		}
-		stripMacros(m.desc)
+		stripMacros(data)
 	}
+	return strings.TrimSpace(data)
+}
+
+func (m *ManPage) parseDesc() {
+	m.desc = m.getSection("DESCRIPTION")
+}
+
+func (m *ManPage) parseSynopsis() {
+	m.synopsis = m.getSection("SYNOPSIS")
 }
 
 func (m *ManPage) parseOpts() {
-	idx, err := m.findSection(`(OPTIONS|SWITCHESi|DESCRIPTION)`)
+	idx, err := m.findSection(`(OPTIONS|SWITCHES)`)
 	if err != nil {
-		return
+		if idx, err = m.findSection(`DESCRIPTION`); err != nil {
+			return
+		}
 	}
 
 	// We have a OPTIONS or SWITCHES section
@@ -132,7 +144,7 @@ func (m *ManPage) parseOpts() {
 		opt = strings.TrimLeft(opt, " ")
 		if idx := strings.Index(opt, "-"); idx != -1 {
 			if spc := strings.IndexAny(opt[idx:], "\r "); spc != -1 {
-                spc += 1
+				spc += 1
 				opt_name := opt[idx:spc]
 				opt_desc := strings.Trim(opt[spc:], " ")
 				m.opts = append(m.opts, Opt{name: opt_name, desc: opt_desc})
@@ -146,8 +158,11 @@ func (o Opt) String() string {
 }
 
 func (m ManPage) String() string {
-	str := fmt.Sprintf("Name: %s\n"+
-		"Desc: %s\n", m.name, m.desc)
+	str := fmt.Sprintf(
+		"Name: %s\n"+
+			"Desc:     %s\n"+
+			"Synposis: %s\n", m.name, m.desc, m.synopsis)
+    str += "Options:\n"
 	for _, o := range m.opts {
 		str += fmt.Sprintf("%v\n", o)
 	}
@@ -162,6 +177,7 @@ func (man *ManPage) parse(data string) {
 
 	// Parse all of the interesting parts
 	man.parseDesc()
+	man.parseSynopsis()
 	man.parseOpts()
 }
 
