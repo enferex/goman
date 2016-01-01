@@ -2,12 +2,15 @@ package main
 
 import (
 	"compress/gzip"
+	"database/sql"
 	"flag"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -18,6 +21,7 @@ type Opt struct {
 
 type ManPage struct {
 	name     string
+	path     string
 	desc     string
 	synopsis string
 	data     string
@@ -50,6 +54,71 @@ var MacroTypes = map[string]MacroType{
 	"PP": PP,
 	"SH": SH,
 	"TP": TP,
+}
+
+func NewDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "manpages.db")
+	if err != nil {
+		log.Fatal("Error opening database ", err)
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS man
+                     (id INTEGER PRIMARY KEY,
+                     name TEXT UNIQUE,
+                     path TEXT UNIQUE,
+                     description TEXT,
+                     synopsis TEXT)`)
+	if err != nil {
+		log.Fatal("Error creating man page table ", err)
+	}
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS options
+                     (id INTEGER PRIMARY KEY,
+                      man_id      INT,
+                      name        TEXT,
+                      description TEXT,
+                      type        TEXT)`)
+	if err != nil {
+		log.Fatal("Error creating options table ", err)
+	}
+
+	return db
+}
+
+func safeString(str string) string {
+	str = strconv.QuoteToASCII(str)
+    str = strings.Replace(str, "'", "''", -1)
+	return "'" + str[1:len(str)-1] + "'"
+}
+
+func (man *ManPage) addToDB(db *sql.DB) {
+	n := safeString(man.name)
+	p := safeString(man.path)
+	d := safeString(man.desc)
+	s := safeString(man.synopsis)
+	q := "REPLACE INTO man (name, path, description, synopsis) "
+	q += fmt.Sprintf(`VALUES(%s,%s,%s,%s)`, n, p, d, s)
+
+    var res sql.Result
+    var err error
+	if res, err = db.Exec(q); err != nil {
+		log.Fatal("Error adding db entry ", err)
+	}
+
+    var man_id int64
+	if man_id, err = res.LastInsertId(); err != nil {
+		log.Fatal("Error obtaining last inserted row ID ", err)
+    }
+
+	for _, opt := range man.opts {
+		n := safeString(opt.name)
+		d := safeString(opt.desc)
+		q := "REPLACE INTO options"
+		q += "(man_id, name, description, type) "
+		q += fmt.Sprintf("VALUES(%d, %s, %s, %s)", man_id, n, d, `'N/A'`)
+		if _, err := db.Exec(q); err != nil {
+			log.Fatal("Error adding man page option into db ", err)
+		}
+	}
 }
 
 func (pe *ParseError) Error() string {
@@ -162,7 +231,7 @@ func (m ManPage) String() string {
 		"Name: %s\n"+
 			"Desc:     %s\n"+
 			"Synposis: %s\n", m.name, m.desc, m.synopsis)
-    str += "Options:\n"
+	str += "Options:\n"
 	for _, o := range m.opts {
 		str += fmt.Sprintf("%v\n", o)
 	}
@@ -181,7 +250,7 @@ func (man *ManPage) parse(data string) {
 	man.parseOpts()
 }
 
-func NewManPage(name string) ManPage {
+func NewManPage(name string) *ManPage {
 	man := ManPage{name: name}
 
 	fil, err := os.Open(name)
@@ -202,16 +271,21 @@ func NewManPage(name string) ManPage {
 	}
 
 	man.parse(string(data))
-
-	return man
+	return &man
 }
 
 func main() {
 	var filename string
+	var add_to_db bool
 	flag.StringVar(&filename, "f", "", "man page to parse")
+	flag.BoolVar(&add_to_db, "d", false, "Add manpage information to database")
 	flag.Parse()
 	println("Parsing " + filename + "...")
 
+	db := NewDB()
+	defer db.Close()
 	man := NewManPage(filename)
-	fmt.Print(man)
+	if add_to_db {
+		man.addToDB(db)
+	}
 }
