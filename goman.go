@@ -122,7 +122,8 @@ func (m *ManPage) getSection(sectname string) string {
 }
 
 func (m *ManPage) parseName() {
-	m.Name = strings.Split(m.getSection("NAME"), " ")[0]
+	name := strings.Split(m.getSection("NAME"), " ")[0]
+	m.Name = strings.TrimRight(name, ` \,`)
 }
 
 func (m *ManPage) parseDesc() {
