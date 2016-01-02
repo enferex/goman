@@ -11,17 +11,17 @@ import (
 )
 
 type Opt struct {
-	name string
-	desc string
+	Name string
+	Desc string
 }
 
 type ManPage struct {
-	name     string
-	path     string
-	desc     string
-	synopsis string
+	Name     string
+	Path     string
+	Desc     string
+	Synopsis string
 	data     string
-	opts     []Opt
+	Opts     []Opt
 }
 
 type ParseError struct {
@@ -105,15 +105,15 @@ func (m *ManPage) getSection(sectname string) string {
 }
 
 func (m *ManPage) parseName() {
-	m.name = strings.Split(m.getSection("NAME"), " ")[0]
+	m.Name = strings.Split(m.getSection("NAME"), " ")[0]
 }
 
 func (m *ManPage) parseDesc() {
-	m.desc = m.getSection("DESCRIPTION")
+	m.Desc = m.getSection("DESCRIPTION")
 }
 
 func (m *ManPage) parseSynopsis() {
-	m.synopsis = m.getSection("SYNOPSIS")
+	m.Synopsis = m.getSection("SYNOPSIS")
 }
 
 func (m *ManPage) parseOpts() {
@@ -151,23 +151,23 @@ func (m *ManPage) parseOpts() {
 				spc += 1
 				opt_name := opt[idx:spc]
 				opt_desc := strings.Trim(opt[spc:], " ")
-				m.opts = append(m.opts, Opt{name: opt_name, desc: opt_desc})
+				m.Opts = append(m.Opts, Opt{Name: opt_name, Desc: opt_desc})
 			}
 		}
 	}
 }
 
 func (o Opt) String() string {
-	return o.name + ": " + o.desc
+	return o.Name + ": " + o.Desc
 }
 
 func (m ManPage) String() string {
 	str := fmt.Sprintf(
 		"Name: %s\n"+
 			"Desc:     %s\n"+
-			"Synposis: %s\n", m.name, m.desc, m.synopsis)
+			"Synposis: %s\n", m.Name, m.Desc, m.Synopsis)
 	str += "Options:\n"
-	for _, o := range m.opts {
+	for _, o := range m.Opts {
 		str += fmt.Sprintf("%v\n", o)
 	}
 
@@ -187,7 +187,7 @@ func (man *ManPage) parse(data string) {
 }
 
 func NewManPage(filename string) *ManPage {
-	man := ManPage{path: filename}
+	man := ManPage{Path: filename}
 
 	fil, err := os.Open(filename)
 	if err != nil {
