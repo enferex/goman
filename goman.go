@@ -84,7 +84,7 @@ func (man *ManPage) findSection(name string) (int, *ParseError) {
 // Remove roff macros from a str
 func stripMacros(str string) string {
 	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ *`)
-    return re.ReplaceAllString(str, "")
+	return re.ReplaceAllString(str, "")
 }
 
 // Return a string containing the roff section named 'sectname', or nil
@@ -210,7 +210,7 @@ func NewManPage(filename string) (*ManPage, error) {
 
 	data, err := ioutil.ReadAll(rdr)
 	if err != nil {
-        return nil, fmt.Errorf("Error reading gzip data: ", err)
+		return nil, fmt.Errorf("Error reading gzip data: ", err)
 	}
 
 	man.parse(string(data))
