@@ -173,6 +173,10 @@ func (m *ManPage) getSection(sectname string) string {
 	return strings.TrimSpace(data)
 }
 
+func (m *ManPage) parseName() {
+    m.name = strings.Split(m.getSection("NAME"), " ")[0]
+}
+
 func (m *ManPage) parseDesc() {
 	m.desc = m.getSection("DESCRIPTION")
 }
@@ -245,6 +249,7 @@ func (man *ManPage) parse(data string) {
 	man.data = replace.Replace(data)
 
 	// Parse all of the interesting parts
+	man.parseName()
 	man.parseDesc()
 	man.parseSynopsis()
 	man.parseOpts()
