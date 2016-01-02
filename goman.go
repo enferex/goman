@@ -255,10 +255,10 @@ func (man *ManPage) parse(data string) {
 	man.parseOpts()
 }
 
-func NewManPage(name string) *ManPage {
-	man := ManPage{name: name}
+func NewManPage(filename string) *ManPage {
+	man := ManPage{path: filename}
 
-	fil, err := os.Open(name)
+	fil, err := os.Open(filename)
 	if err != nil {
 		log.Fatal("Error opening man page", err)
 	}
