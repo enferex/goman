@@ -157,7 +157,7 @@ func (m *ManPage) parseOpts() {
 		opt := ""
 		lines := strings.Split(m.data[mc.loc[1]:], "\n")
 		for _, line := range lines {
-			if line[0] == '.' {
+			if len(line) == 0 || line[0] == '.' {
 				break
 			}
 			opt += " " + line
