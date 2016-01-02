@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -194,26 +193,26 @@ func (man *ManPage) parse(data string) {
 }
 
 // Instantiate and parse a manpage given a gziped manpage path.
-func NewManPage(filename string) *ManPage {
+func NewManPage(filename string) (*ManPage, error) {
 	man := ManPage{Path: filename}
 
 	fil, err := os.Open(filename)
 	if err != nil {
-		log.Fatal("Error opening man page", err)
+		return nil, fmt.Errorf("Error opening man page: %v", err.Error())
 	}
 	defer fil.Close()
 
 	rdr, err := gzip.NewReader(fil)
 	if err != nil {
-		log.Fatal("Error building a reader ", err)
+		return nil, fmt.Errorf("Error building a reader: ", err)
 	}
 	defer rdr.Close()
 
 	data, err := ioutil.ReadAll(rdr)
 	if err != nil {
-		log.Fatal("Error reading gzip data ", err)
+        return nil, fmt.Errorf("Error reading gzip data: ", err)
 	}
 
 	man.parse(string(data))
-	return &man
+	return &man, nil
 }
