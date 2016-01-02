@@ -187,9 +187,12 @@ func (m *ManPage) String() string {
 		"Name: %s\n"+
 			"Desc:     %s\n"+
 			"Synposis: %s\n", m.Name, m.Desc, m.Synopsis)
-	str += "Options:\n"
-	for _, o := range m.Opts {
-		str += fmt.Sprintf("%v\n", o)
+
+	if len(m.Opts) > 0 {
+		str += "Options:\n"
+		for _, o := range m.Opts {
+			str += fmt.Sprintf("%v\n", o)
+		}
 	}
 
 	return str
