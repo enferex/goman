@@ -1,3 +1,11 @@
+// Copyright (c) 2016, Matt Davis following the permissive ISC license.
+// See the LICENSE file that accompanies this software.
+// https://www.isc.org/downloads/software-support-policy/isc-license/
+//
+// goman - Man page parsing library.
+//
+// Matt Davis: https://www.github.com/enferex/goman
+
 package goman
 
 import (
