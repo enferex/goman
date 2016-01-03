@@ -83,7 +83,7 @@ func (man *ManPage) findSection(name string) (int, *ParseError) {
 }
 
 // Remove roff macros from a str
-func stripMacros(str string) {
+func stripMacros(str string) string {
 	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ *`)
 	str = re.ReplaceAllString(str, "")
 }
@@ -105,7 +105,7 @@ func (m *ManPage) getSection(sectname string) string {
 		} else {
 			data = m.data[start:mc.loc[0]]
 		}
-		stripMacros(data)
+		data = stripMacros(data)
 	}
 	return strings.TrimSpace(data)
 }
