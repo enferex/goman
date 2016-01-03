@@ -168,7 +168,7 @@ func (o Opt) String() string {
 	return o.Name + ": " + o.Desc
 }
 
-func (m ManPage) String() string {
+func (m *ManPage) String() string {
 	str := fmt.Sprintf(
 		"Name: %s\n"+
 			"Desc:     %s\n"+
