@@ -56,6 +56,7 @@ func (pe *ParseError) Error() string {
 	return pe.errmsg
 }
 
+// Given an offset return the next roff macro
 func (man *ManPage) nextMacroOffset(offset int) *Macro {
 	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ `)
 	if idx := re.FindStringIndex(man.data[offset:]); idx != nil {
@@ -67,10 +68,12 @@ func (man *ManPage) nextMacroOffset(offset int) *Macro {
 	return nil
 }
 
+// Return the next roff macro (nill if not found)
 func (man *ManPage) nextMacro(macro *Macro) *Macro {
 	return man.nextMacroOffset(macro.loc[1])
 }
 
+// Find the next roff section named 'name'
 func (man *ManPage) findSection(name string) (int, *ParseError) {
 	re := regexp.MustCompilePOSIX(`^\.SH *` + name)
 	if idx := re.FindStringIndex(man.data); idx != nil {
@@ -79,11 +82,14 @@ func (man *ManPage) findSection(name string) (int, *ParseError) {
 	return -1, &ParseError{"Error locating section"}
 }
 
+// Remove roff macros from a str
 func stripMacros(str string) {
 	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ *`)
 	str = re.ReplaceAllString(str, "")
 }
 
+// Return a string containing the roff section named 'sectname', or nil
+// otherwise.
 func (m *ManPage) getSection(sectname string) string {
 	data := "N/A"
 	if idx, err := m.findSection(sectname); err == nil {
@@ -116,6 +122,7 @@ func (m *ManPage) parseSynopsis() {
 	m.Synopsis = m.getSection("SYNOPSIS")
 }
 
+// Parse out options from the man page
 func (m *ManPage) parseOpts() {
 	idx, err := m.findSection(`(OPTIONS|SWITCHES)`)
 	if err != nil {
@@ -186,6 +193,7 @@ func (man *ManPage) parse(data string) {
 	man.parseOpts()
 }
 
+// Instantiate and parse a manpage given a gziped manpage path.
 func NewManPage(filename string) *ManPage {
 	man := ManPage{Path: filename}
 
