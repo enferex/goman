@@ -5,7 +5,6 @@
 // goman - Man page parsing library.
 //
 // Matt Davis: https://www.github.com/enferex/goman
-
 package goman
 
 import (
@@ -17,11 +16,16 @@ import (
 	"strings"
 )
 
+// An option for the program that the man page describes.
+// Often these are represented in the OPTIONS or SWITCHES section of a man page,
+// and usually are prefixed with a '-' character.
 type Opt struct {
 	Name string
 	Desc string
 }
 
+// ManPage represents the relevant fields of a man page.
+// 'Opts' is a list of options provided by the man page.
 type ManPage struct {
 	Name     string
 	Path     string
@@ -31,66 +35,66 @@ type ManPage struct {
 	Opts     []Opt
 }
 
-type ParseError struct {
+type parse_error struct {
 	errmsg string
 }
 
-type Macro struct {
+type macro struct {
 	loc   []int
-	mtype MacroType
+	mtype macro_type
 }
 
-type MacroType int
+type macro_type int
 
 const (
-	_ MacroType = iota
-	B
-	IP
-	PP
-	SH
-	TP
+	_ macro_type = iota
+	b_macro
+	ip_macro
+	pp_macro
+	sh_macro
+	tp_macro
 )
 
-var MacroTypes = map[string]MacroType{
-	"B":  B,
-	"IP": IP,
-	"PP": PP,
-	"SH": SH,
-	"TP": TP,
+var macro_types = map[string]macro_type{
+	"B":  b_macro,
+	"IP": ip_macro,
+	"PP": pp_macro,
+	"SH": sh_macro,
+	"TP": tp_macro,
 }
 
-func (pe *ParseError) Error() string {
+func (pe *parse_error) Error() string {
 	return pe.errmsg
 }
 
 // Given an offset return the next roff macro
-func (man *ManPage) nextMacroOffset(offset int) *Macro {
+func (man *ManPage) nextmacroOffset(offset int) *macro {
 	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ `)
 	if idx := re.FindStringIndex(man.data[offset:]); idx != nil {
 		index := []int{offset + idx[0], offset + idx[1]}
 		str := man.data[index[0]+1 : index[1]-1]
-		mt := MacroType(MacroTypes[str])
-		return &Macro{loc: index, mtype: mt}
+		mt := macro_type(macro_types[str])
+		return &macro{loc: index, mtype: mt}
 	}
 	return nil
 }
 
 // Return the next roff macro (nill if not found)
-func (man *ManPage) nextMacro(macro *Macro) *Macro {
-	return man.nextMacroOffset(macro.loc[1])
+func (man *ManPage) nextmacro(macro *macro) *macro {
+	return man.nextmacroOffset(macro.loc[1])
 }
 
 // Find the next roff section named 'name'
-func (man *ManPage) findSection(name string) (int, *ParseError) {
+func (man *ManPage) findSection(name string) (int, *parse_error) {
 	re := regexp.MustCompilePOSIX(`^\.SH *` + name)
 	if idx := re.FindStringIndex(man.data); idx != nil {
 		return idx[1], nil
 	}
-	return -1, &ParseError{"Error locating section"}
+	return -1, &parse_error{"Error locating section"}
 }
 
 // Remove roff macros from a str
-func stripMacros(str string) string {
+func stripmacros(str string) string {
 	re := regexp.MustCompilePOSIX(`^\.[A-Z]+ *`)
 	return re.ReplaceAllString(str, "")
 }
@@ -101,9 +105,9 @@ func (m *ManPage) getSection(sectname string) string {
 	data := "N/A"
 	if idx, err := m.findSection(sectname); err == nil {
 		start := idx
-		var mc *Macro
-		for mc = m.nextMacroOffset(start); mc != nil; mc = m.nextMacro(mc) {
-			if mc.mtype == SH {
+		var mc *macro
+		for mc = m.nextmacroOffset(start); mc != nil; mc = m.nextmacro(mc) {
+			if mc.mtype == sh_macro {
 				break
 			}
 		}
@@ -112,7 +116,7 @@ func (m *ManPage) getSection(sectname string) string {
 		} else {
 			data = m.data[start:mc.loc[0]]
 		}
-		data = stripMacros(data)
+		data = stripmacros(data)
 	}
 	return strings.TrimSpace(data)
 }
@@ -139,12 +143,12 @@ func (m *ManPage) parseOpts() {
 	}
 
 	// We have a OPTIONS or SWITCHES section
-	for mc := m.nextMacroOffset(idx); mc != nil; mc = m.nextMacro(mc) {
-		if mc.mtype == SH {
+	for mc := m.nextmacroOffset(idx); mc != nil; mc = m.nextmacro(mc) {
+		if mc.mtype == sh_macro {
 			break
 		}
 
-		if !(mc.mtype == B || mc.mtype == IP) {
+		if !(mc.mtype == b_macro || mc.mtype == ip_macro) {
 			break
 		}
 
@@ -171,10 +175,12 @@ func (m *ManPage) parseOpts() {
 	}
 }
 
+// Returns a string representation of an option specified in a man page.
 func (o Opt) String() string {
 	return o.Name + ": " + o.Desc
 }
 
+// Returns a string representation of a man page data structure.
 func (m *ManPage) String() string {
 	str := fmt.Sprintf(
 		"Name: %s\n"+
@@ -200,7 +206,7 @@ func (man *ManPage) parse(data string) {
 	man.parseOpts()
 }
 
-// Instantiate and parse a manpage given a gziped manpage path.
+// Instantiate and parse a man page given a gziped man page path.
 func NewManPage(filename string) (*ManPage, error) {
 	man := ManPage{Path: filename}
 
