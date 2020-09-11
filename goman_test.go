@@ -1,7 +1,6 @@
 package goman
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -14,15 +13,12 @@ func TestNewManPage(t *testing.T) {
 	if man.Name != name {
 		t.Errorf("Name: expected '%s', found '%s'\n", name, man.Name)
 	}
-	fmt.Printf("%+v\n", man)
 
 	desc := `This is just a sample based on the example provided by http://www.tldp.org/HOWTO/Man-Page/q3.html`
 	if man.Desc != desc {
 		t.Errorf("Desc: expected '%s', found '%s'\n", desc, man.Desc)
 	}
-	//-q : q is an option
-	//-u : u is an option
-	//-x : x is an option
+
 	opts := []Opt{
 		{"-q", "q is an option"},
 		{"-u", "u is an option"},
