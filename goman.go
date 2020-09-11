@@ -118,7 +118,7 @@ func (m *ManPage) getSection(sectname string) string {
 		}
 		data = stripmacros(data)
 	}
-	return strings.TrimSpace(data)
+	return strings.TrimSpace(strings.ReplaceAll(data, "\n", " "))
 }
 
 func (m *ManPage) parseName() {
@@ -164,7 +164,7 @@ func (m *ManPage) parseOpts() {
 		}
 
 		// Grab '-<optname>\n'
-		opt = strings.TrimLeft(opt, " ")
+		opt = strings.TrimRight(opt, " ")
 		if idx := strings.Index(opt, "-"); idx != -1 {
 			if spc := strings.IndexAny(opt[idx:], "\r "); spc != -1 {
 				spc += 1
@@ -184,8 +184,8 @@ func (o Opt) String() string {
 // Returns a string representation of a man page data structure.
 func (m *ManPage) String() string {
 	str := fmt.Sprintf(
-		"Name: %s\n"+
-			"Desc:     %s\n"+
+		"Name: % 10s\n"+
+			"Desc:     % 10s\n"+
 			"Synposis: %s\n", m.Name, m.Desc, m.Synopsis)
 
 	if len(m.Opts) > 0 {
