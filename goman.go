@@ -216,19 +216,19 @@ func NewManPage(filename string) (*ManPage, error) {
 
 	fil, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("Error opening man page: %v", err.Error())
+		return nil, fmt.Errorf("error opening man page: %w", err)
 	}
 	defer fil.Close()
 
 	rdr, err := gzip.NewReader(fil)
 	if err != nil {
-		return nil, fmt.Errorf("Error building a reader: ", err)
+		return nil, fmt.Errorf("error building a reader: %w", err)
 	}
 	defer rdr.Close()
 
 	data, err := ioutil.ReadAll(rdr)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading gzip data: ", err)
+		return nil, fmt.Errorf("error reading gzip data: %w", err)
 	}
 
 	man.parse(string(data))
