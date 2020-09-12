@@ -184,8 +184,8 @@ func (o Opt) String() string {
 // Returns a string representation of a man page data structure.
 func (m *ManPage) String() string {
 	str := fmt.Sprintf(
-		"Name: % 10s\n"+
-			"Desc:     % 10s\n"+
+		"Name:     %s\n"+
+			"Desc:     %s\n"+
 			"Synposis: %s\n", m.Name, m.Desc, m.Synopsis)
 
 	if len(m.Opts) > 0 {
