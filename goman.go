@@ -118,7 +118,7 @@ func (m *ManPage) getSection(sectname string) string {
 		}
 		data = stripmacros(data)
 	}
-	return strings.TrimSpace(data)
+	return strings.TrimSpace(strings.ReplaceAll(data, "\n", " "))
 }
 
 func (m *ManPage) parseName() {
@@ -164,7 +164,7 @@ func (m *ManPage) parseOpts() {
 		}
 
 		// Grab '-<optname>\n'
-		opt = strings.TrimLeft(opt, " ")
+		opt = strings.TrimRight(opt, " ")
 		if idx := strings.Index(opt, "-"); idx != -1 {
 			if spc := strings.IndexAny(opt[idx:], "\r "); spc != -1 {
 				spc += 1
@@ -184,7 +184,7 @@ func (o Opt) String() string {
 // Returns a string representation of a man page data structure.
 func (m *ManPage) String() string {
 	str := fmt.Sprintf(
-		"Name: %s\n"+
+		"Name:     %s\n"+
 			"Desc:     %s\n"+
 			"Synposis: %s\n", m.Name, m.Desc, m.Synopsis)
 
@@ -216,19 +216,19 @@ func NewManPage(filename string) (*ManPage, error) {
 
 	fil, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("Error opening man page: %v", err.Error())
+		return nil, fmt.Errorf("error opening man page: %w", err)
 	}
 	defer fil.Close()
 
 	rdr, err := gzip.NewReader(fil)
 	if err != nil {
-		return nil, fmt.Errorf("Error building a reader: ", err)
+		return nil, fmt.Errorf("error building a reader: %w", err)
 	}
 	defer rdr.Close()
 
 	data, err := ioutil.ReadAll(rdr)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading gzip data: ", err)
+		return nil, fmt.Errorf("error reading gzip data: %w", err)
 	}
 
 	man.parse(string(data))

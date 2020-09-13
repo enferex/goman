@@ -8,7 +8,7 @@ however you so choose.
 #### Using
 Use the _go_ utility to download, build, and install this package:
 ```
-go get https://github.com/enferex/goman
+go get github.com/enferex/goman
 ```
 
 #### Testing
