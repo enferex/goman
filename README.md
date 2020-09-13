@@ -19,4 +19,4 @@ go test goman
 ```
 
 #### Contact
-mattdavis9@gmail.com (enferex)   
+https://github.com/enferex

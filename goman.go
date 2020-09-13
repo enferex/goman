@@ -3,8 +3,6 @@
 // https://www.isc.org/downloads/software-support-policy/isc-license/
 //
 // goman - Man page parsing library.
-//
-// Matt Davis: https://www.github.com/enferex/goman
 package goman
 
 import (
